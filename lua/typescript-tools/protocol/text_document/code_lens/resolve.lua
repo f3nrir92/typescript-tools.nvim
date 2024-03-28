@@ -1,5 +1,7 @@
 local c = require "typescript-tools.protocol.constants"
 local utils = require "typescript-tools.protocol.utils"
+local plugin_config = require "typescript-tools.config"
+local inspect = require "typescript-tools.inspect"
 
 local M = {}
 
@@ -32,7 +34,7 @@ function M.handler(request, response, params)
         )
       end, body)
 
-      title = "implementations: " .. #filtered_body
+      title = "Implementations: " .. #filtered_body
       arguments = {
         textDocument = params.data.textDocument,
         position = params.range.start,
@@ -48,7 +50,7 @@ function M.handler(request, response, params)
         return not ref.isDefinition
       end, body.refs)
 
-      title = "references: " .. #refs
+      title = plugin_config.code_lens_config.format.references(refs)
       arguments = {
         textDocument = params.data.textDocument,
         position = params.range.start,

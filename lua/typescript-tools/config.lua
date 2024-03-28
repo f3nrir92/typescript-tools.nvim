@@ -15,6 +15,7 @@
 ---@field code_lens code_lens_mode
 ---@field jsx_close_tag { enable: boolean, filetypes: string[] }
 ---@field disable_member_code_lens boolean
+---@field code_lens_config {events: table, format: {references: fun(refs: table): string; implementations: fun(impls: table): string} }
 local M = {}
 local __store = {}
 
@@ -92,7 +93,7 @@ M.code_lens_mode = {
 
 M.plugin_name = "typescript-tools"
 
----@param settings table
+---@param settings Settings
 function M.load_settings(settings)
   vim.validate {
     settings = { settings, "table", true },
@@ -139,9 +140,28 @@ function M.load_settings(settings)
     ["settings.code_lens"] = { settings.code_lens, "string", true },
     ["settings.disable_member_code_lens"] = { settings.disable_member_code_lens, "boolean", true },
     ["settings.jsx_close_tag"] = { settings.jsx_close_tag, "table", true },
+    ["settings.code_lens_config"] = { settings.code_lens_config, "table", true },
+    ["settings.code_lens_config.events"] = {
+      settings.code_lens_config and settings.code_lens_config.events,
+      "table",
+      true,
+    },
   }
 
-  __store = vim.tbl_deep_extend("force", __store, settings)
+  local defaults = {
+    -- separate_diagnostic_server = true,
+    -- publish_diagnostic_on = M.publish_diagnostic_mode.insert_leave,
+    -- tsserver_plugins = {},
+    code_lens_config = {
+      events = { "BufEnter", "InsertLeave", "CursorHold" },
+      format = {
+        references = function(refs)
+          return "References: " .. #refs
+        end,
+      },
+    },
+  }
+  __store = vim.tbl_deep_extend("force", __store, defaults, settings)
 
   if type(settings.separate_diagnostic_server) == "nil" then
     __store.separate_diagnostic_server = true
@@ -203,6 +223,7 @@ function M.load_settings(settings)
   if settings.jsx_close_tag and not settings.jsx_close_tag.filetypes then
     __store.jsx_close_tag.filetypes = default_jsx_filetypes
   end
+  -- vim.api.nvim_echo({ { inspect(__store.code_lens_config) } }, true, {})
 end
 
 setmetatable(M, {
